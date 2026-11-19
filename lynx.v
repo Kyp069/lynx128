@@ -95,7 +95,7 @@ module lynx
 
 //--- crtc ----------------------------------------------------------------------------------------
 
-	wire crtcCs = !(!iorq && !wr && !a[6] && a[2:1] == 2'b11);
+	wire crtcCs = !(!iorq && (!wr || !rd) && !a[6] && a[2:1] == 2'b11);   // tambien lecturas: crtcQ se lee en 86h/87h
 	wire crtcRs = a[0];
 	wire crtcRw = wr;
 	wire crtcDe;
