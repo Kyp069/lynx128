@@ -9,7 +9,8 @@ module matrix
 	output wire[7:0] col,
 	output reg       F9,
 	output reg       play,
-	output reg       stop
+	output reg       stop,
+	output wire      esc    // ESC pulsada (activo a nivel alto): BREAK
 );
 //-------------------------------------------------------------------------------------------------
 
@@ -42,6 +43,9 @@ always @(posedge clock) if(strb) begin
 			8'h72: key[0][5] <= make; // down
 			8'h6B: key[9][2] <= make; // left
 			8'h74: key[9][5] <= make; // right
+			8'h69: key[9][4] <= make; // end (MAME "End")
+			8'h14: key[2][6] <= make; // right control
+			8'h5A: key[9][3] <= make; // keypad enter = return
 		endcase
 	else
 		case(code)
@@ -139,6 +143,7 @@ end
 //-------------------------------------------------------------------------------------------------
 
 assign col = key[row];
+assign esc = !key[0][6];
 
 //-------------------------------------------------------------------------------------------------
 endmodule
