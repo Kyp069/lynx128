@@ -9,6 +9,7 @@ module lynx
 	input  wire      pe1M5,
 
 	input  wire      reset,
+	input  wire      brk,     // ESC pulsada: /INT (BREAK, como en MAME)
 	output wire      rfsh,
 
 	output wire      hsync,
@@ -84,7 +85,7 @@ module lynx
 		.iorq   (iorq   ),
 		.mreq   (mreq   ),
 		.rfsh   (rfsh   ),
-		.irq    (~irq[IW-1]),
+		.irq    (~(irq[IW-1] | brk)),
 		.m1     (m1     ),
 		.rd     (rd     ),
 		.wr     (wr     ),
