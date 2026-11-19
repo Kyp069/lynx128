@@ -11,6 +11,8 @@ module lynx
 	input  wire      reset,
 	input  wire      brk,     // ESC pulsada: /INT (BREAK, como en MAME)
 	output wire      rfsh,
+	output wire      de,      // display enable del 6845
+	output wire      motor,   // rele del motor de la cinta (puerto 80h d3)
 
 	output wire      hsync,
 	output wire      vsync,
@@ -100,6 +102,7 @@ module lynx
 	wire crtcRs = a[0];
 	wire crtcRw = wr;
 	wire crtcDe;
+	assign de = crtcDe;
 	wire cursor;
 
 	wire[13:0] crtcMa;
@@ -148,6 +151,7 @@ module lynx
 //--- video ---------------------------------------------------------------------------------------
 
 	wire      altg = reg80[4];
+	assign motor = reg80[3];
 	wire[1:0] vduA;
 
 	video video
