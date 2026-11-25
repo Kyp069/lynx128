@@ -10,13 +10,13 @@ module matrix
 	output reg       F9,
 	output reg       play,
 	output reg       stop,
-	output wire      esc    // ESC pulsada (activo a nivel alto): BREAK
+	output reg       break
 );
 //-------------------------------------------------------------------------------------------------
 
 reg[7:0] key[9:0];
 initial begin
-	{ F9, play, stop } = {3{ 1'b1 }};
+	{ F9, play, stop, break } = {4{ 1'b1 }};
 	key[0] = 8'hFF; key[1] = 8'hFF; key[2] = 8'hFF; key[3] = 8'hFF; key[4] = 8'hFF;
 	key[5] = 8'hFF; key[6] = 8'hFF; key[7] = 8'hFF; key[8] = 8'hFF; key[9] = 8'hFF;
 end
@@ -50,6 +50,7 @@ always @(posedge clock) if(strb) begin
 	else
 		case(code)
 			8'h01: F9 <= make; // F9
+			8'h7E: break <= make; // scroll lock
 
 			8'h16: key[0][0] <= make; // 1
 	//		8'h00: key[0][1] <= make; // 
@@ -143,7 +144,6 @@ end
 //-------------------------------------------------------------------------------------------------
 
 assign col = key[row];
-assign esc = !key[0][6];
 
 //-------------------------------------------------------------------------------------------------
 endmodule
