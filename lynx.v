@@ -11,17 +11,21 @@ module lynx
 	input  wire      reset,
 	output wire      rfsh,
 
-	output wire      hsync,
-	output wire      vsync,
 	output wire      r,
 	output wire      g,
 	output wire      b,
+	output wire      blank,
+	output wire      hsync,
+	output wire      vsync,
+
+	output wire[5:0] sound,
 
 	input  wire      tape,
-	output wire[5:0] sound,
+	output wire      motor,
 
 	output wire[3:0] row,
 	input  wire[7:0] col,
+	input  wire      break,
 
 	input  wire[7:0] joy0,
 	input  wire[7:0] joy1,
@@ -58,12 +62,7 @@ module lynx
 	output wire       fdcSel,
 	output wire       fdcSide
 );
-//--- cpu -----------------------------------------------------------------------------------------
-
-	localparam IW = 8;
-
-	reg[IW-1:0] irq = {IW{1'b0}};
-	always @(posedge clock, posedge cursor) if(cursor) irq <= {IW{1'b1}}; else if(ne6M0) irq <= { irq[IW-2:0], 1'b0 };
+//---- io -----------------------------------------------------------------------------------------
 
 	wire iorq;
 	wire mreq;
@@ -72,30 +71,27 @@ module lynx
 	wire wr;
 
 	wire[15:0] a;
-	wire[ 7:0] d;
 	wire[ 7:0] q;
 
-	cpu cpu
-	(
-		.clock  (clock  ),
-		.ne     (ne6M0  ),
-		.pe     (pe6M0  ),
-		.reset  (reset  ),
-		.iorq   (iorq   ),
-		.mreq   (mreq   ),
-		.rfsh   (rfsh   ),
-		.irq    (~irq[IW-1]),
-		.m1     (m1     ),
-		.rd     (rd     ),
-		.wr     (wr     ),
-		.a      (a      ),
-		.d      (d      ),
-		.q      (q      )
-	);
+	reg[4:0] reg58;
+	wire wr58 = !iorq && !wr && a[6:0] == 7'h58;
+	always @(posedge clock, negedge reset) if(!reset) reg58 <= 1'd0; else if(pe6M0) if(wr58) reg58 <= q[4:0];
+
+	reg[7:0] reg80;
+	wire wr80 = !iorq && !wr && !a[6] && a[2:1] == 2'b00;
+	always @(posedge clock, negedge reset) if(!reset) reg80 <= 1'd0; else if(pe6M0) if(wr80) reg80 <= q;
+
+	reg[7:0] reg82;
+	wire wr82 = !iorq && !wr && !a[6] && a[2:1] == 2'b01;
+	always @(posedge clock, negedge reset) if(!reset) reg82 <= 1'd0; else if(pe6M0) if(wr82) reg82 <= q;
+
+	reg[5:0] reg84;
+	wire wr84 = !iorq && !wr && !a[6] && a[2:1] == 2'b10;
+	always @(posedge clock, negedge reset) if(!reset) reg84 <= 1'd0; else if(pe6M0) if(wr84) reg84 <= q[5:0];
 
 //--- crtc ----------------------------------------------------------------------------------------
 
-	wire crtcCs = !(!iorq && !wr && !a[6] && a[2:1] == 2'b11);
+	wire crtcCs = !(!iorq && (!wr || !rd) && !a[6] && a[2:1] == 2'b11);
 	wire crtcRs = a[0];
 	wire crtcRw = wr;
 	wire crtcDe;
@@ -126,24 +122,6 @@ module lynx
 		.RA     (crtcRa )
 	);
 
-//---- io -----------------------------------------------------------------------------------------
-
-	reg[4:0] reg58;
-	wire wr58 = !iorq && m1 && a[6:0] == 7'h58;
-	always @(posedge clock, negedge reset) if(!reset) reg58 <= 1'd0; else if(pe6M0) if(wr58) reg58 <= q[4:0];
-
-	reg[7:0] reg80;
-	wire wr80 = !iorq && !wr && !a[6] && a[2:1] == 2'b00;
-	always @(posedge clock, negedge reset) if(!reset) reg80 <= 1'd0; else if(pe6M0) if(wr80) reg80 <= q;
-
-	reg[7:0] reg82;
-	wire wr82 = !iorq && !wr && !a[6] && a[2:1] == 2'b01;
-	always @(posedge clock, negedge reset) if(!reset) reg82 <= 1'd0; else if(pe6M0) if(wr82) reg82 <= q;
-
-	reg[5:0] reg84;
-	wire wr84 = !iorq && !wr && !a[6] && a[2:1] == 2'b10;
-	always @(posedge clock, negedge reset) if(!reset) reg84 <= 1'd0; else if(pe6M0) if(wr84) reg84 <= q[5:0];
-
 //--- video ---------------------------------------------------------------------------------------
 
 	wire      altg = reg80[4];
@@ -162,6 +140,8 @@ module lynx
 		.g      (g      ),
 		.b      (b      )
 	);
+
+	assign blank = !crtcDe;
 
 //--- sound ---------------------------------------------------------------------------------------
 
@@ -194,18 +174,14 @@ module lynx
 	assign mem4R = !mreq && !rd && reg82[0];
 	assign mem4W = !mreq && !wr && reg82[4];
 
-//-------------------------------------------------------------------------------------------------
+//--- cpu -----------------------------------------------------------------------------------------
 
-	assign row = a[11:8];
+	localparam IW = 8;
 
-	assign fdcA = a[1:0];
-	assign fdcD = q;
-	assign fdcR = !iorq && m1 && a[6:2] == 5'h14;
-	assign fdcW = !iorq && m1 && a[6:2] == 5'h15;
-	assign fdcSel = !reg58[3] && reg58[1:0] == 0;
-	assign fdcSide = reg58[2];
+	reg[IW-1:0] irq = {IW{1'b0}};
+	always @(posedge clock, posedge cursor) if(cursor) irq <= {IW{1'b1}}; else if(ne6M0) irq <= { irq[IW-2:0], 1'b0 };
 
-	assign d
+	wire[7:0] d
 		= !mreq && reg82[1] ? mem2Q2
 		: mem0R ? mem0Q
 		: mem1R ? mem1Q
@@ -217,6 +193,38 @@ module lynx
 		: !iorq && a[6:0] == 8'h7B ? joy1
 		: !iorq && a[6:2] == 5'h14 && !reg58[3] ? fdcQ
 		: 8'hFF;
+
+	cpu cpu
+	(
+		.clock  (clock  ),
+		.ne     (ne6M0  ),
+		.pe     (pe6M0  ),
+		.reset  (reset  ),
+		.iorq   (iorq   ),
+		.mreq   (mreq   ),
+		.rfsh   (rfsh   ),
+		.irq    (!irq[IW-1] && break),
+		.m1     (m1     ),
+		.rd     (rd     ),
+		.wr     (wr     ),
+		.a      (a      ),
+		.d      (d      ),
+		.q      (q      )
+	);
+
+//--- floppy --------------------------------------------------------------------------------------
+
+	assign fdcA = a[1:0];
+	assign fdcD = q;
+	assign fdcR = !iorq && m1 && a[6:2] == 5'h14;
+	assign fdcW = !iorq && m1 && a[6:2] == 5'h15;
+	assign fdcSel = !reg58[3] && reg58[1:0] == 0;
+	assign fdcSide = reg58[2];
+
+//-------------------------------------------------------------------------------------------------
+
+	assign motor = reg80[3];
+	assign row = a[11:8];
 
 //-------------------------------------------------------------------------------------------------
 endmodule
