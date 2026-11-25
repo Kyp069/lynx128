@@ -266,7 +266,7 @@ module mist
 
 	wire[31:0] tzxLba;
 
-	tzx #(.TZX_MS(96000)) tzx
+	tzx #(.TZX_MS(48000)) tzx
 	(
 		.clock       (clock   ),
 		.ce          (1'b1    ),
@@ -281,7 +281,7 @@ module mist
 		.play        (tzxPlay ),
 		.stop        (tzxStop ),
 		.rewind      (tzxStop ),
-		.motor       (1'b1    ),
+		.motor       (tzxMotor),
 		.stop48      (1'b0    ),
 		.select      (1'b0    ),
 		.sel_index   (8'd0    ),
