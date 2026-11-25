@@ -20,9 +20,6 @@ module lynx
 
 	output wire[5:0] sound,
 
-	input  wire      tape,
-	output wire      motor,
-
 	output wire[3:0] row,
 	input  wire[7:0] col,
 	input  wire      break,
@@ -53,6 +50,9 @@ module lynx
 	input  wire[ 7:0] mem4Q,
 	output wire       mem4R,
 	output wire       mem4W,
+
+	input  wire      tape,
+	output wire      motor,
 
 	output wire[ 1:0] fdcA,
 	output wire[ 7:0] fdcD,
