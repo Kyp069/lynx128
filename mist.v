@@ -236,7 +236,7 @@ module mist
 		.busy               (        ), // output       busy,
 		.wp                 (1'b0    ), // input        wp,          // write protect
 		.size_code          (3'd4    ), // input  [2:0] size_code,
-		.layout             (1'b1    ), // input        layout,      // 0 = Track-Side-Sector, 1 - Side-Track-Sector
+		.layout             (imgSz < 64'd409600), // LDF (MAME): 200K = 40 pistas a una cara (1); 800K = 80 pistas a dos caras, pista 0 cara 0, pista 0 cara 1... (0)
 		.side               (fdcSide ), // input        side,
 		.ready              (fdcRdy  ), // input        ready,
 		// SD access (RWMODE == 1)
